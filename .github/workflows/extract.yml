@@ -16,15 +16,17 @@ jobs:
     steps:
       - name: Ambil repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
 
       - name: Siapkan ZIP
         run: |
           sudo apt-get update
-          sudo apt-get install -y unzip
+          sudo apt-get install -y unzip rsync
 
       - name: Ekstrak proyek
         run: |
-          ZIP_FILE=$(find . -maxdepth 1 -iname "*.zip" -type f | head -n 1)
+          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" -type f | head -n 1)
 
           if [ -z "$ZIP_FILE" ]; then
             echo "File ZIP tidak ditemukan"
@@ -35,7 +37,8 @@ jobs:
           unzip -q "$ZIP_FILE" -d /tmp/trxq
 
           PROJECT_DIR=$(find /tmp/trxq \
-            \( -name settings.gradle.kts -o -name settings.gradle \) \
+            -name settings.gradle.kts \
+            -type f \
             -print -quit | xargs -r dirname)
 
           if [ -z "$PROJECT_DIR" ]; then
@@ -43,12 +46,23 @@ jobs:
             exit 1
           fi
 
-          cp -a "$PROJECT_DIR"/. .
+          echo "Proyek ditemukan: $PROJECT_DIR"
+
+          rsync -a \
+            --exclude='.github/workflows/***' \
+            "$PROJECT_DIR"/ ./
 
       - name: Simpan hasil ekstrak
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -A
-          git commit -m "Ekstrak proyek TRXQ" || echo "Tidak ada perubahan"
+
+          if git diff --cached --quiet; then
+            echo "Tidak ada perubahan untuk disimpan"
+            exit 0
+          fi
+
+          git commit -m "Perbarui kode TRXQ"
           git push
