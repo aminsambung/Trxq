@@ -62,7 +62,7 @@ private fun monthKey(m:YearMonth)=m.toString()
 
 @Composable
 fun FinanceApp(context:Context, vm:FinanceViewModel) {
-    val all by vm.transactions.collectAsState()
+    val all by vm.transactions.collectAsState(initial = emptyList())
     var month by remember { mutableStateOf(YearMonth.now()) }
     var tab by remember { mutableStateOf(0) }
     var showAdd by remember { mutableStateOf(false) }
