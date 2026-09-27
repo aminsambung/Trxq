@@ -135,14 +135,31 @@ fun FinanceApp(context:Context, vm:FinanceViewModel) {
             transaction.amount
         }
     }
-                    cats.forEach { (name,value)-> Column(Modifier.padding(vertical=6.dp)) { Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
-                    Row(verticalAlignment=Alignment.CenterVertically) {
-                        Text(categoryIcon(name), style=MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Kategori")
-                    }
-                    Text(rupiah(value))
-                }; LinearProgressIndicator(progress={if(expense>0)value.toFloat()/expense else 0f},modifier=Modifier.fillMaxWidth()) } }
+
+cats.forEach { (name, value) ->
+    Column(Modifier.padding(vertical = 6.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                categoryIcon(name),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(name)
+            Spacer(Modifier.weight(1f))
+            Text(rupiah(value))
+        }
+
+        LinearProgressIndicator(
+            progress = {
+                if (expense > 0) value.toFloat() / expense else 0f
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
                 }
                 3 -> {
                     Text("Cadangkan data transaksi ke berkas JSON. Simpan berkas di tempat aman.",color=Color.DarkGray)
