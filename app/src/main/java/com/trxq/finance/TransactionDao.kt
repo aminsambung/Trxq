@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 interface TransactionDao {
 
     @Query("SELECT * FROM transactions ORDER BY date DESC, id DESC")
-    fun observe(): Flow<List<Transaction>>
+    fun observeAll(): Flow<List<Transaction>>
 
     @Insert
     suspend fun insert(item: Transaction)
