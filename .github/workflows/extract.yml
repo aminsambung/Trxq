@@ -1,0 +1,54 @@
+name: Extract TRXQ Repository
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "*.zip"
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ambil repository
+        uses: actions/checkout@v4
+
+      - name: Siapkan ZIP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip
+
+      - name: Ekstrak proyek
+        run: |
+          ZIP_FILE=$(find . -maxdepth 1 -iname "*.zip" -type f | head -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "File ZIP tidak ditemukan"
+            exit 1
+          fi
+
+          mkdir -p /tmp/trxq
+          unzip -q "$ZIP_FILE" -d /tmp/trxq
+
+          PROJECT_DIR=$(find /tmp/trxq \
+            \( -name settings.gradle.kts -o -name settings.gradle \) \
+            -print -quit | xargs -r dirname)
+
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "File proyek Gradle tidak ditemukan"
+            exit 1
+          fi
+
+          cp -a "$PROJECT_DIR"/. .
+
+      - name: Simpan hasil ekstrak
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Ekstrak proyek TRXQ" || echo "Tidak ada perubahan"
+          git push
