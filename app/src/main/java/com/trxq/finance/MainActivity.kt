@@ -36,15 +36,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Locale
 
-class FinanceViewModel(private val dao: TransactionDao) : ViewModel() {
-    val transactions = dao.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    fun add(type:String, amount:Long, category:String, note:String, date:String) = viewModelScope.launch {
-        if (amount > 0) dao.insert(Transaction(type=type, amount=amount, category=category, note=note, date=date))
-    }
-    fun delete(item:Transaction) = viewModelScope.launch { dao.delete(item) }
-    fun update(item:Transaction) = viewModelScope.launch { dao.update(item) }
-    fun replace(items:List<Transaction>) = viewModelScope.launch { dao.clear(); dao.insertAll(items) }
-}
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
