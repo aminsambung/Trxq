@@ -126,7 +126,7 @@ fun FinanceApp(context:Context, vm:FinanceViewModel) {
                     val cats = mutableMapOf<String, Long>()
 
 current.filter { it.type == "Pengeluaran" }
-    .forEach { transaction: Transaction ->
+    .forEach { transaction ->
         val old = cats[transaction.category] ?: 0L
         cats[transaction.category] = old + transaction.amount
     }
@@ -137,16 +137,12 @@ cats.forEach { (name, value) ->
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                categoryIcon(name),
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text(categoryIcon(name))
             Spacer(Modifier.width(8.dp))
             Text(name)
             Spacer(Modifier.weight(1f))
             Text(rupiah(value))
         }
-
         LinearProgressIndicator(
             progress = {
                 if (expense > 0) value.toFloat() / expense else 0f
