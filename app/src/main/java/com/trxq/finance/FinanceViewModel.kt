@@ -18,24 +18,49 @@ class FinanceViewModel(
         initialValue = emptyList()
     )
 
+    // Menambahkan transaksi baru
+    fun add(
+        type: String,
+        amount: Long,
+        category: String,
+        note: String,
+        date: String
+    ) {
+        viewModelScope.launch {
+            dao.insert(
+                Transaction(
+                    type = type,
+                    amount = amount,
+                    category = category,
+                    note = note,
+                    date = date
+                )
+            )
+        }
+    }
+
+    // Menyimpan transaksi yang sudah dibuat
     fun insert(item: Transaction) {
         viewModelScope.launch {
             dao.insert(item)
         }
     }
 
+    // Memperbarui transaksi
     fun update(item: Transaction) {
         viewModelScope.launch {
             dao.update(item)
         }
     }
 
+    // Menghapus transaksi
     fun delete(item: Transaction) {
         viewModelScope.launch {
             dao.delete(item)
         }
     }
 
+    // Mengganti seluruh data transaksi
     fun replace(items: List<Transaction>) {
         viewModelScope.launch {
             dao.clear()
