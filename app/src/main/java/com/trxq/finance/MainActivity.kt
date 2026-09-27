@@ -124,9 +124,17 @@ fun FinanceApp(context:Context, vm:FinanceViewModel) {
                     SummaryCard("Sisa penghasilan",income-expense)
                     Spacer(Modifier.height(12.dp)); Text("Pengeluaran per kategori",fontWeight=FontWeight.Bold)
                     val cats: Map<String, Long> = current
-    .filter { it.type == "Pengeluaran" }
-    .groupBy { it.category }
-    .mapValues { (_, items) -> items.sumOf { it.amount } }
+    .filter { transaction ->
+        transaction.type == "Pengeluaran"
+    }
+    .groupBy { transaction ->
+        transaction.category
+    }
+    .mapValues { (_, transactions) ->
+        transactions.sumOf { transaction ->
+            transaction.amount
+        }
+    }
                     cats.forEach { (name,value)-> Column(Modifier.padding(vertical=6.dp)) { Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
                     Row(verticalAlignment=Alignment.CenterVertically) {
                         Text(categoryIcon(name), style=MaterialTheme.typography.titleMedium)
