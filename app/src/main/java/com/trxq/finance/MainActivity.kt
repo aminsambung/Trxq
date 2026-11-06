@@ -66,7 +66,7 @@ val TextGray = Color(0xFF888888)
 val OrangeExpense = Color(0xFFFFA726)
 // -------------------
 
-// --- FUNGSI FORMAT ANGKA GLOBAL ---
+// --- FUNGSI BANTUAN ---
 fun formatRibuan(n: Long): String {
     return NumberFormat.getNumberInstance(Locale("id", "ID")).format(n)
 }
@@ -80,6 +80,8 @@ fun formatInputRibuan(input: String): String {
         input
     }
 }
+
+private fun monthKey(m: YearMonth) = m.toString()
 
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
@@ -135,7 +137,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
 
-    val current = all.filter { it.date.startsWith(month.toString()) }
+    val current = all.filter { it.date.startsWith(monthKey(month)) }
     val income = current.filter { it.type == "Pemasukan" }.sumOf { it.amount }
     val expense = current.filter { it.type == "Pengeluaran" }.sumOf { it.amount }
 
@@ -145,7 +147,8 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                 val navItems = listOf(
                     Triple(stringResource(id = R.string.nav_summary), Icons.Default.Home, 0),
                     Triple(stringResource(id = R.string.nav_transactions), Icons.Default.List, 1),
-                    Triple(stringResource(id = R.string.nav_report), Icons.Default.PieChart, 2),
+                    // Ikon standar untuk Laporan
+                    Triple(stringResource(id = R.string.nav_report), Icons.Default.List, 2),
                     Triple(stringResource(id = R.string.settings), Icons.Default.Settings, 3)
                 )
                 navItems.forEach { (label, icon, index) ->
@@ -442,9 +445,9 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, currentMonth: YearMon
         Spacer(modifier = Modifier.height(8.dp))
         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
             Column {
-                // Menu Bahasa
+                // Menu Bahasa (Ikon: Settings)
                 Row(modifier = Modifier.fillMaxWidth().clickable { showLanguageDialog = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Language, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Settings, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stringResource(id = R.string.language), fontWeight = FontWeight.Medium)
@@ -455,29 +458,29 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, currentMonth: YearMon
                 
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
                 
-                // Menu Ekspor PDF
+                // Menu Ekspor PDF (Ikon: Share)
                 Row(modifier = Modifier.fillMaxWidth().clickable { 
                     val monthlyTransactions = all.filter { it.date.startsWith(monthKey(currentMonth)) }
                     exportToPdf(context, currentMonth, monthlyTransactions)
                 }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF3F51B5), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFF3F51B5), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Share, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Ekspor Laporan PDF", fontWeight = FontWeight.Medium); Text("Simpan laporan bulan ini ke PDF", fontSize = 12.sp, color = TextGray) }
                 }
 
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
 
-                // Menu Ekspor JSON
+                // Menu Ekspor JSON (Ikon: Add)
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupOut.launch("trxq-backup-${LocalDate.now()}.json") }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF4CAF50), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFF4CAF50), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Ekspor Data (Backup)", fontWeight = FontWeight.Medium); Text("Simpan ke file JSON", fontSize = 12.sp, color = TextGray) }
                 }
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
                 
-                // Menu Impor JSON
+                // Menu Impor JSON (Ikon: KeyboardArrowDown)
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupIn.launch(arrayOf("application/json", "text/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFFF44336), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudDownload, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFFF44336), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Impor Data (Restore)", fontWeight = FontWeight.Medium); Text("Pulihkan dari file JSON", fontSize = 12.sp, color = TextGray) }
                 }
