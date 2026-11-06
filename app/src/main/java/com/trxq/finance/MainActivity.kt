@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -220,8 +221,11 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 2 -> {
-                    // --- LAYAR LAPORAN (STATISTICS) ---
+                    // --- LAYAR LAPORAN (STATISTICS) INTERAKTIF ---
                     var filterType by remember { mutableStateOf("Bulanan") }
+                    var selectedCategory by remember { mutableStateOf<String?>(null) }
+                    
+                    LaunchedEffect(filterType, month) { selectedCategory = null }
                     
                     val filteredData = when (filterType) {
                         "Harian" -> current.filter { it.date == LocalDate.now().toString() }
@@ -280,36 +284,80 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                                 Canvas(modifier = Modifier.size(200.dp)) {
                                     val strokeWidth = 45.dp.toPx()
                                     var startAngle = -90f
-                                    cats.values.forEachIndexed { index, value ->
+                                    
+                                    cats.entries.forEachIndexed { index, entry ->
+                                        val value = entry.value
+                                        val catName = entry.key
                                         val sweepAngle = (value.toFloat() / totalFilteredExpense.toFloat()) * 360f
+                                        val isSelected = selectedCategory == catName
+                                        val color = chartColors[index % chartColors.size]
+                                        
                                         drawArc(
-                                            color = chartColors[index % chartColors.size],
-                                            startAngle = startAngle, sweepAngle = sweepAngle, useCenter = false,
+                                            color = if (selectedCategory == null || isSelected) color else color.copy(alpha = 0.3f),
+                                            startAngle = startAngle, 
+                                            sweepAngle = sweepAngle, 
+                                            useCenter = false,
                                             topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
                                             size = Size(size.width - strokeWidth, size.height - strokeWidth),
-                                            style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
+                                            style = Stroke(width = if (isSelected) strokeWidth + 10f else strokeWidth, cap = StrokeCap.Butt)
                                         )
                                         startAngle += sweepAngle
                                     }
                                 }
                             }
+                            
                             Spacer(modifier = Modifier.height(24.dp))
+
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 cats.entries.toList().chunked(2).forEach { rowItems ->
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                         rowItems.forEach { entry ->
                                             val globalIndex = cats.keys.toList().indexOf(entry.key)
                                             val color = chartColors[globalIndex % chartColors.size]
-                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                            val isSelected = selectedCategory == entry.key
+                                            
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically, 
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(if (isSelected) color.copy(alpha = 0.1f) else Color.Transparent)
+                                                    .border(1.dp, if (isSelected) color else Color.Transparent, RoundedCornerShape(8.dp))
+                                                    .clickable { selectedCategory = if (selectedCategory == entry.key) null else entry.key }
+                                                    .padding(8.dp)
+                                            ) {
                                                 Box(Modifier.size(12.dp).clip(CircleShape).background(color))
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 Column {
-                                                    Text(entry.key, fontSize = 12.sp, color = TextGray)
+                                                    Text(entry.key, fontSize = 12.sp, color = if (isSelected) color else TextGray, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
                                                     Text(rupiah(entry.value), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                                                 }
                                             }
                                         }
                                         if (rowItems.size == 1) Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                            
+                            if (selectedCategory != null) {
+                                Spacer(modifier = Modifier.height(32.dp))
+                                Text("Rincian ${selectedCategory}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                val details = filteredData.filter { it.category == selectedCategory && it.type == "Pengeluaran" }
+                                details.forEach { tx ->
+                                    Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Box(Modifier.size(40.dp).clip(CircleShape).background(BackgroundGray), contentAlignment = Alignment.Center) {
+                                                Text(categoryIcon(tx.category), fontSize = 20.sp)
+                                            }
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(tx.note.ifBlank { "Tanpa Catatan" }, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                                                Text(tx.date, fontSize = 12.sp, color = TextGray)
+                                            }
+                                            Text("-" + rupiah(tx.amount), fontWeight = FontWeight.Bold, color = ExpenseRed, fontSize = 14.sp)
+                                        }
                                     }
                                 }
                             }
@@ -483,12 +531,20 @@ fun MonthlyChart(all: List<Transaction>, selectedMonth: YearMonth) {
         val rows = all.filter { it.date.startsWith(m.toString()) }
         rows.filter { it.type == "Pemasukan" }.sumOf { it.amount } to rows.filter { it.type == "Pengeluaran" }.sumOf { it.amount }
     }
-    val maxValue = (values.flatMap { listOf(it.first, it.second) }.maxOrNull() ?: 0L).coerceAtLeast(1L)
+    val maxValue = (values.flatMap { pair -> listOf(pair.first, pair.second) }.maxOrNull() ?: 0L).coerceAtLeast(1L)
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(10.dp).background(IncomeGreen, CircleShape)); Spacer(modifier = Modifier.width(6.dp)); Text(stringResource(id = R.string.income), fontSize = 12.sp, color = TextGray) }
-                Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(10.dp).background(Color(0xFFE65B78), CircleShape)); Spacer(modifier = Modifier.width(6.dp)); Text(stringResource(id = R.string.expense), fontSize = 12.sp, color = TextGray) }
+                Row(verticalAlignment = Alignment.CenterVertically) { 
+                    Box(Modifier.size(10.dp).background(IncomeGreen, CircleShape))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(stringResource(id = R.string.income), fontSize = 12.sp, color = TextGray) 
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) { 
+                    Box(Modifier.size(10.dp).background(Color(0xFFE65B78), CircleShape))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(stringResource(id = R.string.expense), fontSize = 12.sp, color = TextGray) 
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth().height(130.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.Bottom) {
@@ -501,7 +557,8 @@ fun MonthlyChart(all: List<Transaction>, selectedMonth: YearMonth) {
                             Box(Modifier.width(12.dp).fillMaxHeight((exp.toFloat() / maxValue).coerceIn(0.01f, 1f)).background(Color(0xFFE65B78), RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(m.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }, fontSize = 10.sp, color = TextGray)
+                        val monthName = m.month.name.take(3).lowercase()
+                        Text(monthName.replaceFirstChar { char -> char.uppercase() }, fontSize = 10.sp, color = TextGray)
                     }
                 }
             }
