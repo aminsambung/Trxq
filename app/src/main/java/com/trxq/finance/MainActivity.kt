@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.* // <--- INI KUNCI RAHASIANYA (Memanggil semua ikon)
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
                         onLanguageChange = { lang ->
                             val sharedPrefs = getSharedPreferences("Settings", Context.MODE_PRIVATE)
                             sharedPrefs.edit().putString("My_Lang", lang).apply()
-                            // Terapkan bahasa secara instan
+                            
                             val locale = Locale(lang)
                             Locale.setDefault(locale)
                             val config = Configuration(resources.configuration)
