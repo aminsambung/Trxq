@@ -159,109 +159,111 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
     ) { pad ->
         Column(Modifier.fillMaxSize().background(BackgroundGray).padding(pad)) {
             when (tab) {
-                0 -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                        contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
-                    ) {
-                        item {
-                            Text(stringResource(id = R.string.app_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                            Spacer(modifier = Modifier.height(12.dp))
-                            MonthPicker(month) { month = it }
-                        }
-                        item {
-                            Card(
-                                shape = RoundedCornerShape(24.dp),
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-                            ) {
-                                Box(modifier = Modifier.background(Brush.linearGradient(colors = listOf(PrimaryBlue, DarkBlue))).padding(24.dp).fillMaxWidth()) {
-                                    Column {
-                                        Text(stringResource(id = R.string.total_balance), color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
-                                        Text(rupiah(income - expense), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                                        Spacer(modifier = Modifier.height(24.dp))
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Column {
-                                                Text(stringResource(id = R.string.income), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-                                                Text(rupiah(income), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                            }
-                                            Column(horizontalAlignment = Alignment.End) {
-                                                Text(stringResource(id = R.string.expense), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-                                                Text(rupiah(expense), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                            }
-                                        }
-                                    }
+    0 -> {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
+        ) {
+            item {
+                Text(stringResource(id = R.string.app_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Spacer(modifier = Modifier.height(12.dp))
+                MonthPicker(month) { month = it }
+            }
+            item {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                ) {
+                    Box(modifier = Modifier.background(Brush.linearGradient(colors = listOf(PrimaryBlue, DarkBlue))).padding(24.dp).fillMaxWidth()) {
+                        Column {
+                            Text(stringResource(id = R.string.total_balance), color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                            Text(rupiah(income - expense), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column {
+                                    Text(stringResource(id = R.string.income), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                                    Text(rupiah(income), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(stringResource(id = R.string.expense), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                                    Text(rupiah(expense), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 }
                             }
-                            Spacer(modifier = Modifier.height(24.dp))
-                        }
-                        item {
-                            Text(stringResource(id = R.string.comparison), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(12.dp))
-                            BarCompare(income, expense)
-                            Spacer(modifier = Modifier.height(24.dp))
-                        }
-                        item {
-                            Text(stringResource(id = R.string.chart_6_months), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(12.dp))
-                            MonthlyChart(all, month)
-                            Spacer(modifier = Modifier.height(24.dp))
-                        }
-                        item {
-                            Text(stringResource(id = R.string.recent_transactions), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
-                        items(current.take(5), key = { it.id }) { item ->
-                            TransactionItemCard(item, onClick = { editing = it }, onDelete = { vm.delete(it) })
-                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                 }
-                1 -> {
-                    Column(Modifier.padding(16.dp)) {
-                        MonthPicker(month) { month = it }
-                        LazyColumn {
-                            items(current, key = { it.id }) { item ->
-                                TransactionItemCard(item, onClick = { editing = it }, onDelete = { vm.delete(it) })
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                        }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+            item {
+                Text(stringResource(id = R.string.comparison), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(12.dp))
+                BarCompare(income, expense)
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+            item {
+                Text(stringResource(id = R.string.chart_6_months), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(12.dp))
+                MonthlyChart(all, month)
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+            item {
+                Text(stringResource(id = R.string.recent_transactions), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            items(current.take(5), key = { it.id }) { item ->
+                TransactionItemCard(item = item, onClick = { editing = item }, onDelete = { vm.delete(item) })
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+    1 -> {
+        Column(Modifier.padding(16.dp)) {
+            MonthPicker(month) { month = it }
+            LazyColumn {
+                items(current, key = { it.id }) { item ->
+                    TransactionItemCard(item = item, onClick = { editing = item }, onDelete = { vm.delete(item) })
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+    }
+    2 -> {
+        Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+            MonthPicker(month) { month = it }
+            SummaryCard(stringResource(id = R.string.income), income)
+            SummaryCard(stringResource(id = R.string.expense), expense)
+            SummaryCard(stringResource(id = R.string.total_balance), income - expense)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Pengeluaran per kategori", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            val cats = mutableMapOf<String, Long>()
+            current.filter { it.type == "Pengeluaran" }.forEach { tx ->
+                cats[tx.category] = (cats[tx.category] ?: 0L) + tx.amount
+            }
+            cats.forEach { (name, value) ->
+                Column(Modifier.padding(vertical = 6.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(categoryIcon(name), fontSize = 20.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(name, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(rupiah(value), fontWeight = FontWeight.Bold)
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { if (expense > 0) value.toFloat() / expense else 0f },
+                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                        color = PrimaryBlue,
+                        trackColor = Color.LightGray.copy(alpha = 0.3f)
+                    )
                 }
-                2 -> {
-                    Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-                        MonthPicker(month) { month = it }
-                        SummaryCard(stringResource(id = R.string.income), income)
-                        SummaryCard(stringResource(id = R.string.expense), expense)
-                        SummaryCard(stringResource(id = R.string.total_balance), income - expense)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Pengeluaran per kategori", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val cats = mutableMapOf<String, Long>()
-                        current.filter { it.type == "Pengeluaran" }.forEach { cats[it.category] = (cats[it.category] ?: 0L) + it.amount }
-                        cats.forEach { (name, value) ->
-                            Column(Modifier.padding(vertical = 6.dp)) {
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Text(categoryIcon(name), fontSize = 20.sp)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(name, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Text(rupiah(value), fontWeight = FontWeight.Bold)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                LinearProgressIndicator(
-                                    progress = { if (expense > 0) value.toFloat() / expense else 0f },
-                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                                    color = PrimaryBlue,
-                                    trackColor = Color.LightGray.copy(alpha = 0.3f)
-                                )
-                            }
-                        }
-                    }
-                }
-                3 -> {
-                    SettingsScreen(context = context, onLanguageChange = onLanguageChange)
-                }
+            }
+        }
+    }
+    3 -> {
+        SettingsScreen(context = context, onLanguageChange = onLanguageChange)
+    }
             }
         }
     }
