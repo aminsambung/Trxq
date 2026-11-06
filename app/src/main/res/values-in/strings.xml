@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Kamu</string>
+    <string name="app_name">Trxq Finance</string>
+    <string name="app_title">Catatan Keuangan</string>
     <string name="greeting">Selamat Siang</string>
     <string name="total_balance">Sisa Penghasilan</string>
     <string name="income">Pemasukan</string>
@@ -7,7 +8,7 @@
     <string name="comparison">Perbandingan bulan ini</string>
     <string name="chart_6_months">Grafik 6 bulan</string>
     <string name="recent_transactions">Transaksi terbaru</string>
-    
+
     <!-- Bottom Nav -->
     <string name="nav_summary">Ringkasan</string>
     <string name="nav_transactions">Transaksi</string>
@@ -24,4 +25,21 @@
     <string name="save">Simpan</string>
     <string name="cancel">Batal</string>
     <string name="delete">Hapus</string>
+
+    <!-- Settings -->
+    <string name="settings">Pengaturan</string>
+    <string name="profiles">PROFIL</string>
+    <string name="active_profile">Profil Aktif</string>
+    <string name="personal">Pribadi</string>
+    <string name="office">Kantor</string>
+    <string name="home">Rumah</string>
+    <string name="add_new_profile">Tambah Profil Baru</string>
+    <string name="general">UMUM</string>
+    <string name="language">Bahasa</string>
+    <string name="english">Inggris</string>
+    <string name="indonesian">Indonesia</string>
+    <string name="theme">Tema</string>
+    <string name="system_default">Bawaan Sistem</string>
+    <string name="select_profile">Pilih Profil</string>
+    <string name="active">Aktif</string>
 </resources>
