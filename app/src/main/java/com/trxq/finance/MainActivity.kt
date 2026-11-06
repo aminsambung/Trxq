@@ -592,7 +592,7 @@ fun MonthlyChart(all: List<Transaction>, selectedMonth: YearMonth) {
 @Composable
 fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, String) -> Unit, dismiss: () -> Unit) {
     var type by remember { mutableStateOf(item?.type ?: "Pengeluaran") }
-    var amount by remember { mutableStateOf(item?.amount?.toString() ?: "") }
+    var amount by remember { mutableStateOf(if (item != null) formatInputRibuan(item.amount.toString()) else "") }
     var category by remember { mutableStateOf(item?.category ?: "Makanan") }
     var note by remember { mutableStateOf(item?.note ?: "") }
     var date by remember { mutableStateOf(item?.date ?: LocalDate.now().toString()) }
