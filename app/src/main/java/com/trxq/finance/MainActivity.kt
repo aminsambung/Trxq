@@ -1,4 +1,4 @@
-package com.trxq
+package com.trxq.finance
 
 import android.content.Context
 import android.content.res.Configuration
