@@ -1,4 +1,4 @@
-package com.trxq.finance
+package com.trxq
 
 import android.content.Context
 import android.content.res.Configuration
@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,8 +25,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,9 +44,10 @@ import org.json.JSONObject
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.WeekFields
 import java.util.Locale
 
-// --- PALET WARNA APLIKASI ---
+// --- PALET WARNA ---
 val PrimaryBlue = Color(0xFF4A54E1)
 val DarkBlue = Color(0xFF6A46E0)
 val BackgroundGray = Color(0xFFF8F9FA)
@@ -49,6 +55,7 @@ val IncomeGreen = Color(0xFF4CAF50)
 val ExpenseRed = Color(0xFFF44336)
 val TextGray = Color(0xFF888888)
 val OrangeExpense = Color(0xFFFFA726)
+// -------------------
 
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
@@ -82,7 +89,6 @@ class MainActivity : ComponentActivity() {
                         onLanguageChange = { lang ->
                             val sharedPrefs = getSharedPreferences("Settings", Context.MODE_PRIVATE)
                             sharedPrefs.edit().putString("My_Lang", lang).apply()
-                            
                             val locale = Locale(lang)
                             Locale.setDefault(locale)
                             val config = Configuration(resources.configuration)
@@ -140,10 +146,10 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
         },
         floatingActionButtonPosition = FabPosition.End
     ) { pad ->
-        // Padding bawah ditambah (80.dp -> 100.dp) agar tombol FAB tidak menutupi item terakhir
         Column(Modifier.fillMaxSize().background(BackgroundGray).padding(pad)) {
             when (tab) {
                 0 -> {
+                    // --- LAYAR RINGKASAN ---
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                         contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
@@ -202,6 +208,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 1 -> {
+                    // --- LAYAR TRANSAKSI ---
                     Column(Modifier.padding(16.dp)) {
                         MonthPicker(month) { month = it }
                         LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
@@ -213,39 +220,109 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 2 -> {
-                    Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-                        MonthPicker(month) { month = it }
-                        SummaryCard(stringResource(id = R.string.income), income)
-                        SummaryCard(stringResource(id = R.string.expense), expense)
-                        SummaryCard(stringResource(id = R.string.total_balance), income - expense)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Pengeluaran per kategori", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val cats = mutableMapOf<String, Long>()
-                        current.filter { it.type == "Pengeluaran" }.forEach { tx ->
-                            cats[tx.category] = (cats[tx.category] ?: 0L) + tx.amount
-                        }
-                        cats.forEach { (name, value) ->
-                            Column(Modifier.padding(vertical = 6.dp)) {
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Text(categoryIcon(name), fontSize = 20.sp)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(name, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Text(rupiah(value), fontWeight = FontWeight.Bold)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                LinearProgressIndicator(
-                                    progress = { if (expense > 0) value.toFloat() / expense else 0f },
-                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                                    color = PrimaryBlue,
-                                    trackColor = Color.LightGray.copy(alpha = 0.3f)
-                                )
+                    // --- LAYAR LAPORAN (STATISTICS) ---
+                    var filterType by remember { mutableStateOf("Bulanan") }
+                    
+                    val filteredData = when (filterType) {
+                        "Harian" -> current.filter { it.date == LocalDate.now().toString() }
+                        "Mingguan" -> {
+                            val weekFields = WeekFields.of(Locale.getDefault())
+                            current.filter { 
+                                val tgl = LocalDate.parse(it.date)
+                                tgl.get(weekFields.weekOfWeekBasedYear()) == LocalDate.now().get(weekFields.weekOfWeekBasedYear()) &&
+                                tgl.year == LocalDate.now().year
                             }
                         }
+                        else -> current
+                    }
+                    val totalFilteredExpense = filteredData.filter { it.type == "Pengeluaran" }.sumOf { it.amount }
+
+                    Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+                        Text("Statistics", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        MonthPicker(month) { month = it }
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(4.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            listOf("Harian", "Mingguan", "Bulanan").forEach { filter ->
+                                val isSelected = filterType == filter
+                                Box(
+                                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).clickable { filterType = filter }.padding(vertical = 10.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(filter, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, color = if (isSelected) PrimaryBlue else TextGray)
+                                        if (isSelected) {
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Box(Modifier.width(24.dp).height(2.dp).background(PrimaryBlue, RoundedCornerShape(2.dp)))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Text("TOTAL PENGELUARAN (${filterType.uppercase()})", fontSize = 12.sp, color = TextGray, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                        Text(rupiah(totalFilteredExpense), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        val cats = mutableMapOf<String, Long>()
+                        filteredData.filter { it.type == "Pengeluaran" }.forEach { tx ->
+                            cats[tx.category] = (cats[tx.category] ?: 0L) + tx.amount
+                        }
+                        val chartColors = listOf(Color(0xFF5B8DEF), Color(0xFF9C27B0), Color(0xFFFFCA28), Color(0xFF00BFA5), Color(0xFFFF7043), Color(0xFFE65B78))
+
+                        if (cats.isNotEmpty() && totalFilteredExpense > 0) {
+                            Box(modifier = Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
+                                Canvas(modifier = Modifier.size(200.dp)) {
+                                    val strokeWidth = 45.dp.toPx()
+                                    var startAngle = -90f
+                                    cats.values.forEachIndexed { index, value ->
+                                        val sweepAngle = (value.toFloat() / totalFilteredExpense.toFloat()) * 360f
+                                        drawArc(
+                                            color = chartColors[index % chartColors.size],
+                                            startAngle = startAngle, sweepAngle = sweepAngle, useCenter = false,
+                                            topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
+                                            size = Size(size.width - strokeWidth, size.height - strokeWidth),
+                                            style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
+                                        )
+                                        startAngle += sweepAngle
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                cats.entries.toList().chunked(2).forEach { rowItems ->
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                        rowItems.forEach { entry ->
+                                            val globalIndex = cats.keys.toList().indexOf(entry.key)
+                                            val color = chartColors[globalIndex % chartColors.size]
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                                Box(Modifier.size(12.dp).clip(CircleShape).background(color))
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Column {
+                                                    Text(entry.key, fontSize = 12.sp, color = TextGray)
+                                                    Text(rupiah(entry.value), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                                }
+                                            }
+                                        }
+                                        if (rowItems.size == 1) Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        } else {
+                            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                                Text("Belum ada data pengeluaran.", color = TextGray)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(32.dp))
                     }
                 }
                 3 -> {
+                    // --- LAYAR PENGATURAN ---
                     SettingsScreen(context = context, vm = vm, onLanguageChange = onLanguageChange)
                 }
             }
@@ -269,7 +346,6 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, onLanguageChange: (St
     var showLanguageDialog by remember { mutableStateOf(false) }
     val sharedPrefs = context.getSharedPreferences("Settings", Context.MODE_PRIVATE)
     val currentLang = sharedPrefs.getString("My_Lang", "in") ?: "in"
-    
     val all by vm.transactions.collectAsState(initial = emptyList())
 
     val backupOut = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -294,48 +370,30 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, onLanguageChange: (St
     Column(modifier = Modifier.fillMaxSize().background(BackgroundGray).padding(16.dp).verticalScroll(rememberScrollState())) {
         Text(stringResource(id = R.string.settings), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.align(Alignment.CenterHorizontally))
         Spacer(modifier = Modifier.height(24.dp))
-        
         Text(stringResource(id = R.string.general), fontSize = 12.sp, color = TextGray, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
-        
         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
             Column {
                 Row(modifier = Modifier.fillMaxWidth().clickable { showLanguageDialog = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Language, contentDescription = null, tint = Color.White)
-                    }
+                    Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Language, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stringResource(id = R.string.language), fontWeight = FontWeight.Medium)
-                        Text(text = if (currentLang == "in") "🇮🇩 ${stringResource(id = R.string.indonesian)}" else "🇬🇧 ${stringResource(id = R.string.english)}", fontSize = 12.sp, color = TextGray)
+                        Text(if (currentLang == "in") "🇮🇩 ${stringResource(id = R.string.indonesian)}" else "🇬🇧 ${stringResource(id = R.string.english)}", fontSize = 12.sp, color = TextGray)
                     }
                     Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = TextGray)
                 }
-                
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
-                
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupOut.launch("trxq-backup-${LocalDate.now()}.json") }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF4CAF50), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.White)
-                    }
+                    Box(Modifier.size(40.dp).background(Color(0xFF4CAF50), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Ekspor Data (Backup)", fontWeight = FontWeight.Medium)
-                        Text("Simpan ke file JSON", fontSize = 12.sp, color = TextGray)
-                    }
+                    Column(modifier = Modifier.weight(1f)) { Text("Ekspor Data (Backup)", fontWeight = FontWeight.Medium); Text("Simpan ke file JSON", fontSize = 12.sp, color = TextGray) }
                 }
-                
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
-
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupIn.launch(arrayOf("application/json", "text/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFFF44336), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.CloudDownload, contentDescription = null, tint = Color.White)
-                    }
+                    Box(Modifier.size(40.dp).background(Color(0xFFF44336), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudDownload, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Impor Data (Restore)", fontWeight = FontWeight.Medium)
-                        Text("Pulihkan dari file JSON", fontSize = 12.sp, color = TextGray)
-                    }
+                    Column(modifier = Modifier.weight(1f)) { Text("Impor Data (Restore)", fontWeight = FontWeight.Medium); Text("Pulihkan dari file JSON", fontSize = 12.sp, color = TextGray) }
                 }
             }
         }
@@ -481,7 +539,6 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // 1. Toggle Pengeluaran/Pemasukan
                 Row(
                     Modifier.fillMaxWidth().background(Color(0xFFF0F0F0), RoundedCornerShape(12.dp)).padding(4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -493,8 +550,7 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
                             containerColor = if (type == "Pengeluaran") PrimaryBlue else Color.Transparent,
                             contentColor = if (type == "Pengeluaran") Color.White else TextGray
                         ),
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = null
+                        shape = RoundedCornerShape(8.dp), elevation = null
                     ) { Text(stringResource(id = R.string.expense)) }
                     
                     Button(
@@ -504,24 +560,19 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
                             containerColor = if (type == "Pemasukan") PrimaryBlue else Color.Transparent,
                             contentColor = if (type == "Pemasukan") Color.White else TextGray
                         ),
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = null
+                        shape = RoundedCornerShape(8.dp), elevation = null
                     ) { Text(stringResource(id = R.string.income)) }
                 }
 
-                // 2. Input Nominal
                 OutlinedTextField(
                     value = amount, 
                     onValueChange = { amount = it.filter(Char::isDigit) }, 
                     label = { Text(stringResource(id = R.string.amount)) }, 
                     prefix = { Text("Rp ") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), 
-                    singleLine = true, 
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
                 )
                 
-                // 3. Grid Kategori (Persis Desain Spendwise)
                 Text(stringResource(id = R.string.category), fontSize = 12.sp, color = TextGray, fontWeight = FontWeight.Bold)
                 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -534,20 +585,15 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
                                     modifier = Modifier.clickable { category = catName }.padding(4.dp).width(60.dp)
                                 ) {
                                     Box(
-                                        modifier = Modifier.size(48.dp)
-                                            .background(if (isSelected) PrimaryBlue else Color(0xFFF5F5F5), CircleShape),
+                                        modifier = Modifier.size(48.dp).background(if (isSelected) PrimaryBlue else Color(0xFFF5F5F5), CircleShape),
                                         contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(icon, fontSize = 24.sp)
-                                    }
+                                    ) { Text(icon, fontSize = 24.sp) }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        catName, 
-                                        fontSize = 10.sp, 
+                                        catName, fontSize = 10.sp, 
                                         color = if (isSelected) PrimaryBlue else TextGray, 
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        textAlign = TextAlign.Center,
-                                        maxLines = 2
+                                        textAlign = TextAlign.Center, maxLines = 1
                                     )
                                 }
                             }
@@ -555,7 +601,6 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
                     }
                 }
 
-                // 4. Tanggal & Catatan
                 OutlinedTextField(date, { date = it }, label = { Text(stringResource(id = R.string.date)) }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                 OutlinedTextField(note, { note = it }, label = { Text(stringResource(id = R.string.note)) }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
             }
@@ -564,16 +609,11 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
             Button(
                 onClick = { amount.toLongOrNull()?.let { save(type, it, category, note, date) } }, 
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(stringResource(id = R.string.save), fontSize = 16.sp)
-            }
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
+            ) { Text(stringResource(id = R.string.save), fontSize = 16.sp) }
         },
         dismissButton = {
-            TextButton(onClick = dismiss, modifier = Modifier.fillMaxWidth()) { 
-                Text(stringResource(id = R.string.cancel), color = TextGray) 
-            }
+            TextButton(onClick = dismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(id = R.string.cancel), color = TextGray) }
         }
     )
 }
