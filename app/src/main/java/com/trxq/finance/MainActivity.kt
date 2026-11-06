@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.* // <--- INI KUNCI RAHASIANYA (Memanggil semua ikon)
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,7 +41,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Locale
 
-// --- PALET WARNA ---
 val PrimaryBlue = Color(0xFF4A54E1)
 val DarkBlue = Color(0xFF6A46E0)
 val BackgroundGray = Color(0xFFF8F9FA)
@@ -49,10 +48,8 @@ val IncomeGreen = Color(0xFF4CAF50)
 val ExpenseRed = Color(0xFFF44336)
 val TextGray = Color(0xFF888888)
 val OrangeExpense = Color(0xFFFFA726)
-// -------------------
 
 class MainActivity : ComponentActivity() {
-    // Helper untuk ganti bahasa
     override fun attachBaseContext(newBase: Context) {
         val sharedPrefs = newBase.getSharedPreferences("Settings", Context.MODE_PRIVATE)
         val language = sharedPrefs.getString("My_Lang", "in") ?: "in"
@@ -84,7 +81,6 @@ class MainActivity : ComponentActivity() {
                         onLanguageChange = { lang ->
                             val sharedPrefs = getSharedPreferences("Settings", Context.MODE_PRIVATE)
                             sharedPrefs.edit().putString("My_Lang", lang).apply()
-                            
                             val locale = Locale(lang)
                             Locale.setDefault(locale)
                             val config = Configuration(resources.configuration)
@@ -114,7 +110,6 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
     val income = current.filter { it.type == "Pemasukan" }.sumOf { it.amount }
     val expense = current.filter { it.type == "Pengeluaran" }.sumOf { it.amount }
 
-    // Backup
     val backupOut = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) {
             val arr = JSONArray()
@@ -165,7 +160,6 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
         Column(Modifier.fillMaxSize().background(BackgroundGray).padding(pad)) {
             when (tab) {
                 0 -> {
-                    // LAYAR RINGKASAN
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                         contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
@@ -224,7 +218,6 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 1 -> {
-                    // LAYAR TRANSAKSI
                     Column(Modifier.padding(16.dp)) {
                         MonthPicker(month) { month = it }
                         LazyColumn {
@@ -236,21 +229,16 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 2 -> {
-                    // LAYAR LAPORAN
                     Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
                         MonthPicker(month) { month = it }
                         SummaryCard(stringResource(id = R.string.income), income)
                         SummaryCard(stringResource(id = R.string.expense), expense)
                         SummaryCard(stringResource(id = R.string.total_balance), income - expense)
-
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Pengeluaran per kategori", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Spacer(modifier = Modifier.height(8.dp))
-
                         val cats = mutableMapOf<String, Long>()
-                        current.filter { it.type == "Pengeluaran" }.forEach {
-                            cats[it.category] = (cats[it.category] ?: 0L) + it.amount
-                        }
+                        current.filter { it.type == "Pengeluaran" }.forEach { cats[it.category] = (cats[it.category] ?: 0L) + it.amount }
                         cats.forEach { (name, value) ->
                             Column(Modifier.padding(vertical = 6.dp)) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -272,7 +260,6 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 3 -> {
-                    // LAYAR PENGATURAN
                     SettingsScreen(context = context, onLanguageChange = onLanguageChange)
                 }
             }
@@ -291,39 +278,27 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
     }
 }
 
-// --- KOMPONEN UI ---
-
 @Composable
 fun SettingsScreen(context: Context, onLanguageChange: (String) -> Unit) {
     var showLanguageDialog by remember { mutableStateOf(false) }
     val sharedPrefs = context.getSharedPreferences("Settings", Context.MODE_PRIVATE)
     val currentLang = sharedPrefs.getString("My_Lang", "in") ?: "in"
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(BackgroundGray).padding(16.dp).verticalScroll(rememberScrollState())
-    ) {
+    Column(modifier = Modifier.fillMaxSize().background(BackgroundGray).padding(16.dp).verticalScroll(rememberScrollState())) {
         Text(stringResource(id = R.string.settings), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.align(Alignment.CenterHorizontally))
         Spacer(modifier = Modifier.height(24.dp))
-
         Text(stringResource(id = R.string.general), fontSize = 12.sp, color = TextGray, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
-
         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
             Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable { showLanguageDialog = true }.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(modifier = Modifier.fillMaxWidth().clickable { showLanguageDialog = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Language, contentDescription = null, tint = Color.White)
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stringResource(id = R.string.language), fontWeight = FontWeight.Medium)
-                        Text(
-                            text = if (currentLang == "in") "🇮🇩 ${stringResource(id = R.string.indonesian)}" else "🇬🇧 ${stringResource(id = R.string.english)}",
-                            fontSize = 12.sp, color = TextGray
-                        )
+                        Text(text = if (currentLang == "in") "🇮🇩 ${stringResource(id = R.string.indonesian)}" else "🇬🇧 ${stringResource(id = R.string.english)}", fontSize = 12.sp, color = TextGray)
                     }
                     Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = TextGray)
                 }
@@ -337,25 +312,17 @@ fun SettingsScreen(context: Context, onLanguageChange: (String) -> Unit) {
             title = { Text(stringResource(id = R.string.language), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { onLanguageChange("in"); showLanguageDialog = false }.padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onLanguageChange("in"); showLanguageDialog = false }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("🇮🇩 ${stringResource(id = R.string.indonesian)}", modifier = Modifier.weight(1f), fontSize = 16.sp)
                         if (currentLang == "in") Icon(Icons.Default.Check, contentDescription = null, tint = PrimaryBlue)
                     }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { onLanguageChange("en"); showLanguageDialog = false }.padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onLanguageChange("en"); showLanguageDialog = false }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("🇬🇧 ${stringResource(id = R.string.english)}", modifier = Modifier.weight(1f), fontSize = 16.sp)
                         if (currentLang == "en") Icon(Icons.Default.Check, contentDescription = null, tint = PrimaryBlue)
                     }
                 }
             },
-            confirmButton = {
-                TextButton(onClick = { showLanguageDialog = false }) { Text(stringResource(id = R.string.cancel), color = TextGray) }
-            }
+            confirmButton = { TextButton(onClick = { showLanguageDialog = false }) { Text(stringResource(id = R.string.cancel), color = TextGray) } }
         )
     }
 }
@@ -396,11 +363,7 @@ fun SummaryCard(label: String, value: Long) {
 
 @Composable
 fun TransactionItemCard(item: Transaction, onClick: () -> Unit, onDelete: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }
-    ) {
+    Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp).clip(CircleShape).background(BackgroundGray), contentAlignment = Alignment.Center) {
                 Text(categoryIcon(item.category), fontSize = 24.sp)
@@ -411,11 +374,7 @@ fun TransactionItemCard(item: Transaction, onClick: () -> Unit, onDelete: () -> 
                 Text("${item.date} • ${if (item.type == "Pemasukan") stringResource(id = R.string.income) else stringResource(id = R.string.expense)}", color = TextGray, fontSize = 12.sp)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    (if (item.type == "Pemasukan") "+" else "-") + rupiah(item.amount),
-                    color = if (item.type == "Pemasukan") IncomeGreen else ExpenseRed,
-                    fontWeight = FontWeight.Bold, fontSize = 16.sp
-                )
+                Text((if (item.type == "Pemasukan") "+" else "-") + rupiah(item.amount), color = if (item.type == "Pemasukan") IncomeGreen else ExpenseRed, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 TextButton(onClick = onDelete, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(24.dp)) {
                     Text(stringResource(id = R.string.delete), color = PrimaryBlue, fontSize = 12.sp)
                 }
@@ -432,20 +391,11 @@ fun MonthlyChart(all: List<Transaction>, selectedMonth: YearMonth) {
         rows.filter { it.type == "Pemasukan" }.sumOf { it.amount } to rows.filter { it.type == "Pengeluaran" }.sumOf { it.amount }
     }
     val maxValue = (values.flatMap { listOf(it.first, it.second) }.maxOrNull() ?: 0L).coerceAtLeast(1L)
-
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(10.dp).background(IncomeGreen, CircleShape))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(id = R.string.income), fontSize = 12.sp, color = TextGray)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(10.dp).background(Color(0xFFE65B78), CircleShape))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(id = R.string.expense), fontSize = 12.sp, color = TextGray)
-                }
+                Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(10.dp).background(IncomeGreen, CircleShape)); Spacer(modifier = Modifier.width(6.dp)); Text(stringResource(id = R.string.income), fontSize = 12.sp, color = TextGray) }
+                Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(10.dp).background(Color(0xFFE65B78), CircleShape)); Spacer(modifier = Modifier.width(6.dp)); Text(stringResource(id = R.string.expense), fontSize = 12.sp, color = TextGray) }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth().height(130.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.Bottom) {
@@ -473,9 +423,8 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
     var category by remember { mutableStateOf(item?.category ?: "Makanan") }
     var note by remember { mutableStateOf(item?.note ?: "") }
     var date by remember { mutableStateOf(item?.date ?: LocalDate.now().toString()) }
-
     val cats = if (type == "Pemasukan") listOf("Gaji", "Bonus", "Usaha", "Lainnya") else listOf("Makanan", "Rumah tangga", "Transportasi", "Tagihan", "Belanja", "Kesehatan", "Pendidikan", "Lainnya")
-
+    
     AlertDialog(
         onDismissRequest = dismiss,
         title = { Text(if (item == null) stringResource(id = R.string.add_transaction) else stringResource(id = R.string.edit_transaction), fontWeight = FontWeight.Bold) },
@@ -486,12 +435,10 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
                     FilterChip(selected = type == "Pemasukan", onClick = { type = "Pemasukan"; category = "Gaji" }, label = { Text(stringResource(id = R.string.income)) }, modifier = Modifier.weight(1f))
                 }
                 OutlinedTextField(amount, { amount = it.filter(Char::isDigit) }, label = { Text(stringResource(id = R.string.amount)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
-
                 Text(stringResource(id = R.string.category), fontSize = 12.sp, color = TextGray)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     cats.forEach { c -> FilterChip(selected = category == c, onClick = { category = c }, label = { Text(c) }) }
                 }
-
                 OutlinedTextField(date, { date = it }, label = { Text(stringResource(id = R.string.date)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(note, { note = it }, label = { Text(stringResource(id = R.string.note)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             }
@@ -501,9 +448,7 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
                 Text(stringResource(id = R.string.save))
             }
         },
-        dismissButton = {
-            TextButton(onClick = dismiss) { Text(stringResource(id = R.string.cancel), color = TextGray) }
-        }
+        dismissButton = { TextButton(onClick = dismiss) { Text(stringResource(id = R.string.cancel), color = TextGray) } }
     )
 }
 
