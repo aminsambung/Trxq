@@ -2,7 +2,13 @@ package com.trxq.finance
 
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Canvas
+import android.graphics.Color as AndroidColor
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
 import android.os.Bundle
+import android.os.Environment
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -42,6 +48,8 @@ import com.trxq.finance.data.AppDatabase
 import com.trxq.finance.data.Transaction
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.YearMonth
@@ -371,7 +379,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                 }
                 3 -> {
                     // --- LAYAR PENGATURAN ---
-                    SettingsScreen(context = context, vm = vm, onLanguageChange = onLanguageChange)
+                    SettingsScreen(context = context, vm = vm, currentMonth = month, onLanguageChange = onLanguageChange)
                 }
             }
         }
@@ -390,7 +398,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
 }
 
 @Composable
-fun SettingsScreen(context: Context, vm: FinanceViewModel, onLanguageChange: (String) -> Unit) {
+fun SettingsScreen(context: Context, vm: FinanceViewModel, currentMonth: YearMonth, onLanguageChange: (String) -> Unit) {
     var showLanguageDialog by remember { mutableStateOf(false) }
     val sharedPrefs = context.getSharedPreferences("Settings", Context.MODE_PRIVATE)
     val currentLang = sharedPrefs.getString("My_Lang", "in") ?: "in"
@@ -422,6 +430,7 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, onLanguageChange: (St
         Spacer(modifier = Modifier.height(8.dp))
         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
             Column {
+                // Menu Bahasa
                 Row(modifier = Modifier.fillMaxWidth().clickable { showLanguageDialog = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Language, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
@@ -431,13 +440,30 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, onLanguageChange: (St
                     }
                     Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = TextGray)
                 }
+                
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
+                
+                // Menu Ekspor PDF
+                Row(modifier = Modifier.fillMaxWidth().clickable { 
+                    val monthlyTransactions = all.filter { it.date.startsWith(monthKey(currentMonth)) }
+                    exportToPdf(context, currentMonth, monthlyTransactions)
+                }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(40.dp).background(Color(0xFF3F51B5), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color.White) }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) { Text("Ekspor Laporan PDF", fontWeight = FontWeight.Medium); Text("Simpan laporan bulan ini ke PDF", fontSize = 12.sp, color = TextGray) }
+                }
+
+                HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
+
+                // Menu Ekspor JSON
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupOut.launch("trxq-backup-${LocalDate.now()}.json") }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).background(Color(0xFF4CAF50), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Ekspor Data (Backup)", fontWeight = FontWeight.Medium); Text("Simpan ke file JSON", fontSize = 12.sp, color = TextGray) }
                 }
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
+                
+                // Menu Impor JSON
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupIn.launch(arrayOf("application/json", "text/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).background(Color(0xFFF44336), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudDownload, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
@@ -687,4 +713,88 @@ private fun categoryIcon(category: String): String = when (category.lowercase())
     "bonus" -> "🎁"
     "usaha" -> "🏪"
     else -> "💰"
+}
+
+// --- FUNGSI CETAK PDF ---
+fun exportToPdf(context: Context, month: YearMonth, transactions: List<Transaction>) {
+    val pdfDocument = PdfDocument()
+    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // Ukuran A4
+    val page = pdfDocument.startPage(pageInfo)
+    val canvas: Canvas = page.canvas
+    val paint = Paint()
+    
+    // Judul
+    paint.color = AndroidColor.BLACK
+    paint.textSize = 18f
+    paint.isFakeBoldText = true
+    canvas.drawText("Laporan Keuangan TRXQ", 40f, 50f, paint)
+    
+    // Periode
+    paint.textSize = 12f
+    paint.isFakeBoldText = false
+    val monthName = month.month.name.lowercase().replaceFirstChar { it.uppercase() }
+    canvas.drawText("Periode: $monthName ${month.year}", 40f, 70f, paint)
+    
+    // Garis
+    val linePaint = Paint()
+    linePaint.color = AndroidColor.LTGRAY
+    linePaint.strokeWidth = 1f
+    canvas.drawLine(40f, 85f, 555f, 85f, linePaint)
+
+    // Header Tabel
+    paint.isFakeBoldText = true
+    canvas.drawText("Tanggal", 40f, 110f, paint)
+    canvas.drawText("Kategori / Catatan", 150f, 110f, paint)
+    canvas.drawText("Tipe", 350f, 110f, paint)
+    canvas.drawText("Nominal", 450f, 110f, paint)
+    canvas.drawLine(40f, 120f, 555f, 120f, linePaint)
+
+    var yPosition = 140f
+    paint.isFakeBoldText = false
+    var totalIncome = 0L
+    var totalExpense = 0L
+
+    val sortedTransactions = transactions.sortedBy { it.date }
+
+    sortedTransactions.forEach { tx ->
+        val note = tx.note.ifBlank { tx.category }
+        canvas.drawText(tx.date, 40f, yPosition, paint)
+        canvas.drawText(note.take(25) + if (note.length > 25) "..." else "", 150f, yPosition, paint)
+        canvas.drawText(if (tx.type == "Pemasukan") "Masuk" else "Keluar", 350f, yPosition, paint)
+        
+        val nominalStr = if (tx.type == "Pemasukan") "+ Rp ${tx.amount}" else "- Rp ${tx.amount}"
+        canvas.drawText(nominalStr, 450f, yPosition, paint)
+        
+        if (tx.type == "Pemasukan") totalIncome += tx.amount else totalExpense += tx.amount
+        yPosition += 20f
+        
+        if (yPosition > 800f) {
+            // Jika halaman penuh (untuk aplikasi sederhana, kita asumsikan data muat 1 halaman)
+        }
+    }
+
+    // Total
+    yPosition += 10f
+    canvas.drawLine(40f, yPosition, 555f, yPosition, linePaint)
+    yPosition += 25f
+    paint.isFakeBoldText = true
+    canvas.drawText("Total Pemasukan: Rp $totalIncome", 350f, yPosition, paint)
+    yPosition += 20f
+    canvas.drawText("Total Pengeluaran: Rp $totalExpense", 350f, yPosition, paint)
+    yPosition += 20f
+    canvas.drawText("Sisa Saldo: Rp ${totalIncome - totalExpense}", 350f, yPosition, paint)
+
+    pdfDocument.finishPage(page)
+
+    // Simpan File ke Downloads
+    val fileName = "TRXQ_${monthName}_${month.year}.pdf"
+    val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
+    try {
+        pdfDocument.writeTo(FileOutputStream(file))
+        Toast.makeText(context, "PDF berhasil disimpan di Downloads/$fileName", Toast.LENGTH_LONG).show()
+    } catch (e: Exception) {
+        Toast.makeText(context, "Gagal menyimpan PDF: ${e.message}", Toast.LENGTH_LONG).show()
+    } finally {
+        pdfDocument.close()
+    }
 }
