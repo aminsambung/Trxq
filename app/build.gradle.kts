@@ -5,10 +5,10 @@ plugins {
     id("com.google.devtools.ksp")
 }
 android {
-    namespace = "com.trxq"
+    namespace = "com.trxq.finance"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.trxq"
+        applicationId = "com.trxq.finance"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
