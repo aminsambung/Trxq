@@ -1,3 +1,27 @@
 <resources>
-    <string name="app_name">TRXQ</string>
+    <string name="app_name">Spendwise</string>
+    <string name="greeting">Good Afternoon</string>
+    <string name="total_balance">Remaining Balance</string>
+    <string name="income">Income</string>
+    <string name="expense">Expense</string>
+    <string name="comparison">This Month Comparison</string>
+    <string name="chart_6_months">6 Months Chart</string>
+    <string name="recent_transactions">Recent Transactions</string>
+    
+    <!-- Bottom Nav -->
+    <string name="nav_summary">Summary</string>
+    <string name="nav_transactions">Transactions</string>
+    <string name="nav_report">Report</string>
+    <string name="nav_backup">Backup</string>
+
+    <!-- Dialog -->
+    <string name="add_transaction">Add Transaction</string>
+    <string name="edit_transaction">Edit Transaction</string>
+    <string name="amount">Amount (Rp)</string>
+    <string name="category">Category</string>
+    <string name="date">Date (YYYY-MM-DD)</string>
+    <string name="note">Note</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
 </resources>
