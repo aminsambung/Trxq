@@ -8,14 +8,23 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,9 +37,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import com.trxq.finance.data.AppDatabase
 import com.trxq.finance.data.Transaction
 import org.json.JSONArray
@@ -40,15 +46,15 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Locale
 
-// --- PALET WARNA SPENDWISE ---
-val SpendwiseBlue = Color(0xFF4A54E1)
-val SpendwiseDarkBlue = Color(0xFF6A46E0)
-val SpendwiseBg = Color(0xFFF8F9FA)
+// --- PALET WARNA BARU (MODERN) ---
+val PrimaryBlue = Color(0xFF4A54E1)
+val DarkBlue = Color(0xFF6A46E0)
+val BackgroundGray = Color(0xFFF8F9FA)
 val IncomeGreen = Color(0xFF4CAF50)
 val ExpenseRed = Color(0xFFF44336)
 val TextGray = Color(0xFF888888)
 val OrangeExpense = Color(0xFFFFA726)
-// -----------------------------
+// ---------------------------------
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,8 +64,8 @@ class MainActivity : ComponentActivity() {
             val vm = remember { FinanceViewModel(dao) }
             MaterialTheme(
                 colorScheme = lightColorScheme(
-                    primary = SpendwiseBlue,
-                    background = SpendwiseBg,
+                    primary = PrimaryBlue,
+                    background = BackgroundGray,
                     surface = Color.White
                 )
             ) {
@@ -96,7 +102,10 @@ fun FinanceApp(context: Context, vm: FinanceViewModel) {
         if (uri != null) try {
             val text = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } ?: "[]"
             val arr = JSONArray(text); val items = mutableListOf<Transaction>()
-            for (i in 0 until arr.length()) { val o = arr.getJSONObject(i); items.add(Transaction(type = o.getString("type"), amount = o.getLong("amount"), category = o.getString("category"), note = o.optString("note"), date = o.getString("date"))) }
+            for (i in 0 until arr.length()) { 
+                val o = arr.getJSONObject(i); 
+                items.add(Transaction(type = o.getString("type"), amount = o.getLong("amount"), category = o.getString("category"), note = o.optString("note"), date = o.getString("date"))) 
+            }
             vm.replace(items)
         } catch (_: Exception) { }
     }
@@ -123,14 +132,14 @@ fun FinanceApp(context: Context, vm: FinanceViewModel) {
         },
         floatingActionButton = {
             if (tab == 0 || tab == 1) {
-                FloatingActionButton(onClick = { showAdd = true }, containerColor = SpendwiseBlue) {
+                FloatingActionButton(onClick = { showAdd = true }, containerColor = PrimaryBlue) {
                     Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
                 }
             }
         },
         floatingActionButtonPosition = FabPosition.End
     ) { pad ->
-        Column(Modifier.fillMaxSize().background(SpendwiseBg).padding(pad)) {
+        Column(Modifier.fillMaxSize().background(BackgroundGray).padding(pad)) {
             when (tab) {
                 0 -> {
                     // --- LAYAR UTAMA (RINGKASAN) ---
@@ -139,7 +148,8 @@ fun FinanceApp(context: Context, vm: FinanceViewModel) {
                         contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
                     ) {
                         item {
-                            Text(stringResource(id = R.string.greeting), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                            Text(stringResource(id = R.string.app_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                            Spacer(modifier = Modifier.height(12.dp))
                             MonthPicker(month) { month = it }
                         }
                         // Kartu Saldo Gradien
@@ -150,7 +160,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel) {
                                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                             ) {
                                 Box(
-                                    modifier = Modifier.background(Brush.linearGradient(colors = listOf(SpendwiseBlue, SpendwiseDarkBlue))).padding(24.dp).fillMaxWidth()
+                                    modifier = Modifier.background(Brush.linearGradient(colors = listOf(PrimaryBlue, DarkBlue))).padding(24.dp).fillMaxWidth()
                                 ) {
                                     Column {
                                         Text(stringResource(id = R.string.total_balance), color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
@@ -200,10 +210,12 @@ fun FinanceApp(context: Context, vm: FinanceViewModel) {
                     // --- LAYAR TRANSAKSI ---
                     Column(Modifier.padding(16.dp)) {
                         MonthPicker(month) { month = it }
-                        LazyColumn { items(current, key = { it.id }) { item ->
-                            TransactionItemCard(item, onClick = { editing = it }, onDelete = { vm.delete(it) })
-                            Spacer(modifier = Modifier.height(8.dp))
-                        } }
+                        LazyColumn { 
+                            items(current, key = { it.id }) { item ->
+                                TransactionItemCard(item, onClick = { editing = it }, onDelete = { vm.delete(it) })
+                                Spacer(modifier = Modifier.height(8.dp))
+                            } 
+                        }
                     }
                 }
                 2 -> {
@@ -235,7 +247,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel) {
                                 LinearProgressIndicator(
                                     progress = { if (expense > 0) value.toFloat() / expense else 0f },
                                     modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                                    color = SpendwiseBlue,
+                                    color = PrimaryBlue,
                                     trackColor = Color.LightGray.copy(alpha = 0.3f)
                                 )
                             }
@@ -247,12 +259,16 @@ fun FinanceApp(context: Context, vm: FinanceViewModel) {
                     Column(Modifier.padding(16.dp)) {
                         Text("Cadangkan data transaksi ke berkas JSON. Simpan berkas di tempat aman.", color = TextGray)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { backupOut.launch("catatan-keuangan-${LocalDate.now()}.json") }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = SpendwiseBlue)) {
+                        Button(onClick = { backupOut.launch("catatan-keuangan-${LocalDate.now()}.json") }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)) {
                             Text("Ekspor / Cadangkan")
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(onClick = { backupIn.launch(arrayOf("application/json", "text/*")) }, modifier = Modifier.fillMaxWidth(), border = ButtonDefaults.outlinedButtonBorder.copy(brush = Brush.linearGradient(listOf(SpendwiseBlue, SpendwiseDarkBlue)))) {
-                            Text("Pulihkan dari cadangan", color = SpendwiseBlue)
+                        OutlinedButton(
+                            onClick = { backupIn.launch(arrayOf("application/json", "text/*")) }, 
+                            modifier = Modifier.fillMaxWidth(),
+                            border = ButtonDefaults.outlinedButtonBorder.copy(brush = Brush.linearGradient(listOf(PrimaryBlue, DarkBlue)))
+                        ) {
+                            Text("Pulihkan dari cadangan", color = PrimaryBlue)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Catatan: pemulihan akan mengganti seluruh data yang ada.", fontSize = 12.sp, color = TextGray)
@@ -318,7 +334,7 @@ fun TransactionItemCard(item: Transaction, onClick: () -> Unit, onDelete: () -> 
         modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(48.dp).clip(CircleShape).background(SpendwiseBg), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(48.dp).clip(CircleShape).background(BackgroundGray), contentAlignment = Alignment.Center) {
                 Text(categoryIcon(item.category), fontSize = 24.sp)
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -334,7 +350,7 @@ fun TransactionItemCard(item: Transaction, onClick: () -> Unit, onDelete: () -> 
                     fontSize = 16.sp
                 )
                 TextButton(onClick = onDelete, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(24.dp)) {
-                    Text(stringResource(id = R.string.delete), color = SpendwiseBlue, fontSize = 12.sp)
+                    Text(stringResource(id = R.string.delete), color = PrimaryBlue, fontSize = 12.sp)
                 }
             }
         }
@@ -406,7 +422,6 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
                 OutlinedTextField(amount, { amount = it.filter(Char::isDigit) }, label = { Text(stringResource(id = R.string.amount)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
                 
                 Text(stringResource(id = R.string.category), fontSize = 12.sp, color = TextGray)
-                // Tampilkan kategori dalam bentuk FlowRow (bisa di-scroll jika banyak)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     cats.forEach { c -> FilterChip(selected = category == c, onClick = { category = c }, label = { Text(c) }) }
                 }
@@ -416,7 +431,7 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
             }
         },
         confirmButton = {
-            Button(onClick = { amount.toLongOrNull()?.let { save(type, it, category, note, date) } }, colors = ButtonDefaults.buttonColors(containerColor = SpendwiseBlue)) {
+            Button(onClick = { amount.toLongOrNull()?.let { save(type, it, category, note, date) } }, colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)) {
                 Text(stringResource(id = R.string.save))
             }
         },
