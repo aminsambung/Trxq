@@ -697,7 +697,16 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
         }
     )
 }
-
+// Fungsi untuk memformat input angka menjadi format ribuan (3.000.000)
+fun formatInputRibuan(input: String): String {
+    if (input.isEmpty()) return ""
+    return try {
+        val number = input.filter { it.isDigit() }.toLong()
+        NumberFormat.getNumberInstance(Locale("id", "ID")).format(number)
+    } catch (e: NumberFormatException) {
+        input
+    }
+}
 private fun categoryIcon(category: String): String = when (category.lowercase()) {
     "makanan", "makan", "makanan & minuman" -> "🍔"
     "rumah tangga", "rumah" -> "🏠"
