@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Kamu</string>
+    <string name="greeting">Selamat Siang</string>
+    <string name="total_balance">Sisa Penghasilan</string>
+    <string name="income">Pemasukan</string>
+    <string name="expense">Pengeluaran</string>
+    <string name="comparison">Perbandingan bulan ini</string>
+    <string name="chart_6_months">Grafik 6 bulan</string>
+    <string name="recent_transactions">Transaksi terbaru</string>
+    
+    <!-- Bottom Nav -->
+    <string name="nav_summary">Ringkasan</string>
+    <string name="nav_transactions">Transaksi</string>
+    <string name="nav_report">Laporan</string>
+    <string name="nav_backup">Cadangan</string>
+
+    <!-- Dialog -->
+    <string name="add_transaction">Tambah transaksi</string>
+    <string name="edit_transaction">Edit transaksi</string>
+    <string name="amount">Nominal (Rp)</string>
+    <string name="category">Kategori</string>
+    <string name="date">Tanggal (YYYY-MM-DD)</string>
+    <string name="note">Catatan</string>
+    <string name="save">Simpan</string>
+    <string name="cancel">Batal</string>
+    <string name="delete">Hapus</string>
+</resources>
