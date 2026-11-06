@@ -66,6 +66,21 @@ val TextGray = Color(0xFF888888)
 val OrangeExpense = Color(0xFFFFA726)
 // -------------------
 
+// --- FUNGSI FORMAT ANGKA GLOBAL ---
+fun formatRibuan(n: Long): String {
+    return NumberFormat.getNumberInstance(Locale("id", "ID")).format(n)
+}
+
+fun formatInputRibuan(input: String): String {
+    if (input.isEmpty()) return ""
+    return try {
+        val number = input.filter { it.isDigit() }.toLong()
+        formatRibuan(number)
+    } catch (e: NumberFormatException) {
+        input
+    }
+}
+
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
         val sharedPrefs = newBase.getSharedPreferences("Settings", Context.MODE_PRIVATE)
@@ -112,9 +127,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private fun rupiah(n: Long): String = "Rp " + NumberFormat.getNumberInstance(Locale("id", "ID")).format(n)
-private fun monthKey(m: YearMonth) = m.toString()
-
 @Composable
 fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String) -> Unit) {
     val all by vm.transactions.collectAsState(initial = emptyList())
@@ -123,7 +135,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
 
-    val current = all.filter { it.date.startsWith(monthKey(month)) }
+    val current = all.filter { it.date.startsWith(month.toString()) }
     val income = current.filter { it.type == "Pemasukan" }.sumOf { it.amount }
     val expense = current.filter { it.type == "Pengeluaran" }.sumOf { it.amount }
 
@@ -133,8 +145,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                 val navItems = listOf(
                     Triple(stringResource(id = R.string.nav_summary), Icons.Default.Home, 0),
                     Triple(stringResource(id = R.string.nav_transactions), Icons.Default.List, 1),
-                    // MENGGUNAKAN IKON STANDAR: List
-                    Triple(stringResource(id = R.string.nav_report), Icons.Default.List, 2),
+                    Triple(stringResource(id = R.string.nav_report), Icons.Default.PieChart, 2),
                     Triple(stringResource(id = R.string.settings), Icons.Default.Settings, 3)
                 )
                 navItems.forEach { (label, icon, index) ->
@@ -159,6 +170,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
         Column(Modifier.fillMaxSize().background(BackgroundGray).padding(pad)) {
             when (tab) {
                 0 -> {
+                    // --- LAYAR RINGKASAN ---
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                         contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
@@ -177,16 +189,16 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                                 Box(modifier = Modifier.background(Brush.linearGradient(colors = listOf(PrimaryBlue, DarkBlue))).padding(24.dp).fillMaxWidth()) {
                                     Column {
                                         Text(stringResource(id = R.string.total_balance), color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
-                                        Text(rupiah(income - expense), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                                        Text("Rp ${formatRibuan(income - expense)}", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.height(24.dp))
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Column {
                                                 Text(stringResource(id = R.string.income), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-                                                Text(rupiah(income), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                                Text("Rp ${formatRibuan(income)}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
                                             Column(horizontalAlignment = Alignment.End) {
                                                 Text(stringResource(id = R.string.expense), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-                                                Text(rupiah(expense), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                                Text("Rp ${formatRibuan(expense)}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             }
                                         }
                                     }
@@ -217,6 +229,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 1 -> {
+                    // --- LAYAR TRANSAKSI ---
                     Column(Modifier.padding(16.dp)) {
                         MonthPicker(month) { month = it }
                         LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
@@ -228,6 +241,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 2 -> {
+                    // --- LAYAR LAPORAN (STATISTICS) ---
                     var filterType by remember { mutableStateOf("Bulanan") }
                     var selectedCategory by remember { mutableStateOf<String?>(null) }
                     
@@ -276,7 +290,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Text("TOTAL PENGELUARAN (${filterType.uppercase()})", fontSize = 12.sp, color = TextGray, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-                        Text(rupiah(totalFilteredExpense), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                        Text("Rp ${formatRibuan(totalFilteredExpense)}", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                         Spacer(modifier = Modifier.height(24.dp))
 
                         val cats = mutableMapOf<String, Long>()
@@ -336,7 +350,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 Column {
                                                     Text(entry.key, fontSize = 12.sp, color = if (isSelected) color else TextGray, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
-                                                    Text(rupiah(entry.value), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                                    Text("Rp ${formatRibuan(entry.value)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                                                 }
                                             }
                                         }
@@ -362,7 +376,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                                                 Text(tx.note.ifBlank { "Tanpa Catatan" }, fontWeight = FontWeight.Medium, fontSize = 14.sp)
                                                 Text(tx.date, fontSize = 12.sp, color = TextGray)
                                             }
-                                            Text("-" + rupiah(tx.amount), fontWeight = FontWeight.Bold, color = ExpenseRed, fontSize = 14.sp)
+                                            Text("-Rp ${formatRibuan(tx.amount)}", fontWeight = FontWeight.Bold, color = ExpenseRed, fontSize = 14.sp)
                                         }
                                     }
                                 }
@@ -376,6 +390,7 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 3 -> {
+                    // --- LAYAR PENGATURAN ---
                     SettingsScreen(context = context, vm = vm, currentMonth = month, onLanguageChange = onLanguageChange)
                 }
             }
@@ -427,9 +442,9 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, currentMonth: YearMon
         Spacer(modifier = Modifier.height(8.dp))
         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
             Column {
-                // Menu Bahasa (Menggunakan Ikon Settings)
+                // Menu Bahasa
                 Row(modifier = Modifier.fillMaxWidth().clickable { showLanguageDialog = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Settings, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Language, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stringResource(id = R.string.language), fontWeight = FontWeight.Medium)
@@ -440,29 +455,29 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, currentMonth: YearMon
                 
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
                 
-                // Menu Ekspor PDF (Menggunakan Ikon Share)
+                // Menu Ekspor PDF
                 Row(modifier = Modifier.fillMaxWidth().clickable { 
                     val monthlyTransactions = all.filter { it.date.startsWith(monthKey(currentMonth)) }
                     exportToPdf(context, currentMonth, monthlyTransactions)
                 }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF3F51B5), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Share, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFF3F51B5), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Ekspor Laporan PDF", fontWeight = FontWeight.Medium); Text("Simpan laporan bulan ini ke PDF", fontSize = 12.sp, color = TextGray) }
                 }
 
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
 
-                // Menu Ekspor JSON (Menggunakan Ikon Add)
+                // Menu Ekspor JSON
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupOut.launch("trxq-backup-${LocalDate.now()}.json") }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF4CAF50), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFF4CAF50), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Ekspor Data (Backup)", fontWeight = FontWeight.Medium); Text("Simpan ke file JSON", fontSize = 12.sp, color = TextGray) }
                 }
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
                 
-                // Menu Impor JSON (Menggunakan Ikon KeyboardArrowDown)
+                // Menu Impor JSON
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupIn.launch(arrayOf("application/json", "text/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFFF44336), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFFF44336), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudDownload, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Impor Data (Restore)", fontWeight = FontWeight.Medium); Text("Pulihkan dari file JSON", fontSize = 12.sp, color = TextGray) }
                 }
@@ -505,7 +520,7 @@ fun BarCompare(income: Long, expense: Long) {
     val max = maxOf(income, expense, 1L)
     Column {
         listOf(stringResource(id = R.string.income) to income, stringResource(id = R.string.expense) to expense).forEach { (label, v) ->
-            Text("$label • ${rupiah(v)}", fontSize = 12.sp, color = TextGray)
+            Text("$label • Rp ${formatRibuan(v)}", fontSize = 12.sp, color = TextGray)
             Spacer(modifier = Modifier.height(4.dp))
             Box(Modifier.fillMaxWidth().height(12.dp).background(Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(6.dp))) {
                 Box(Modifier.fillMaxWidth((v.toFloat() / max).coerceIn(0f, 1f)).fillMaxHeight().background(if (label == stringResource(id = R.string.income)) IncomeGreen else OrangeExpense, RoundedCornerShape(6.dp)))
@@ -520,7 +535,7 @@ fun SummaryCard(label: String, value: Long) {
     Card(Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(Modifier.padding(16.dp)) {
             Text(label, color = TextGray, fontSize = 14.sp)
-            Text(rupiah(value), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
+            Text("Rp ${formatRibuan(value)}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
         }
     }
 }
@@ -538,7 +553,7 @@ fun TransactionItemCard(item: Transaction, onClick: () -> Unit, onDelete: () -> 
                 Text("${item.date} • ${if (item.type == "Pemasukan") stringResource(id = R.string.income) else stringResource(id = R.string.expense)}", color = TextGray, fontSize = 12.sp)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text((if (item.type == "Pemasukan") "+" else "-") + rupiah(item.amount), color = if (item.type == "Pemasukan") IncomeGreen else ExpenseRed, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text((if (item.type == "Pemasukan") "+" else "-") + "Rp " + formatRibuan(item.amount), color = if (item.type == "Pemasukan") IncomeGreen else ExpenseRed, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 TextButton(onClick = onDelete, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(24.dp)) {
                     Text(stringResource(id = R.string.delete), color = PrimaryBlue, fontSize = 12.sp)
                 }
@@ -645,13 +660,13 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
                 }
 
                 OutlinedTextField(
-                value = amount, 
-                onValueChange = { amount = formatInputRibuan(it) }, // Format otomatis saat diketik
-                label = { Text(stringResource(id = R.string.amount)) }, 
-                prefix = { Text("Rp ") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), 
-                singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
-                   )
+                    value = amount, 
+                    onValueChange = { amount = formatInputRibuan(it) }, 
+                    label = { Text(stringResource(id = R.string.amount)) }, 
+                    prefix = { Text("Rp ") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), 
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
+                )
                 
                 Text(stringResource(id = R.string.category), fontSize = 12.sp, color = TextGray, fontWeight = FontWeight.Bold)
                 
@@ -688,9 +703,9 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
         confirmButton = {
             Button(
                 onClick = { 
-    val cleanAmount = amount.replace(".", "").toLongOrNull()
-    cleanAmount?.let { save(type, it, category, note, date) } 
-}, 
+                    val cleanAmount = amount.replace(".", "").toLongOrNull()
+                    cleanAmount?.let { save(type, it, category, note, date) } 
+                }, 
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
             ) { Text(stringResource(id = R.string.save), fontSize = 16.sp) }
@@ -700,16 +715,7 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
         }
     )
 }
-// Fungsi untuk memformat input angka menjadi format ribuan (3.000.000)
-fun formatInputRibuan(input: String): String {
-    if (input.isEmpty()) return ""
-    return try {
-        val number = input.filter { it.isDigit() }.toLong()
-        NumberFormat.getNumberInstance(Locale("id", "ID")).format(number)
-    } catch (e: NumberFormatException) {
-        input
-    }
-}
+
 private fun categoryIcon(category: String): String = when (category.lowercase()) {
     "makanan", "makan", "makanan & minuman" -> "🍔"
     "rumah tangga", "rumah" -> "🏠"
@@ -727,26 +733,30 @@ private fun categoryIcon(category: String): String = when (category.lowercase())
 // --- FUNGSI CETAK PDF ---
 fun exportToPdf(context: Context, month: YearMonth, transactions: List<Transaction>) {
     val pdfDocument = PdfDocument()
-    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // Ukuran A4
     val page = pdfDocument.startPage(pageInfo)
     val canvas: Canvas = page.canvas
     val paint = Paint()
     
+    // Judul
     paint.color = AndroidColor.BLACK
     paint.textSize = 18f
     paint.isFakeBoldText = true
     canvas.drawText("Laporan Keuangan TRXQ", 40f, 50f, paint)
     
+    // Periode
     paint.textSize = 12f
     paint.isFakeBoldText = false
     val monthName = month.month.name.lowercase().replaceFirstChar { it.uppercase() }
     canvas.drawText("Periode: $monthName ${month.year}", 40f, 70f, paint)
     
+    // Garis Header
     val linePaint = Paint()
     linePaint.color = AndroidColor.LTGRAY
     linePaint.strokeWidth = 1f
     canvas.drawLine(40f, 85f, 555f, 85f, linePaint)
 
+    // Header Tabel
     paint.isFakeBoldText = true
     canvas.drawText("Tanggal", 40f, 110f, paint)
     canvas.drawText("Kategori / Catatan", 150f, 110f, paint)
@@ -767,25 +777,30 @@ fun exportToPdf(context: Context, month: YearMonth, transactions: List<Transacti
         canvas.drawText(note.take(25) + if (note.length > 25) "..." else "", 150f, yPosition, paint)
         canvas.drawText(if (tx.type == "Pemasukan") "Masuk" else "Keluar", 350f, yPosition, paint)
         
-        val nominalStr = if (tx.type == "Pemasukan") "+ Rp ${tx.amount}" else "- Rp ${tx.amount}"
+        // FORMAT NOMINAL DENGAN TITIK
+        val nominalStr = if (tx.type == "Pemasukan") "+ ${formatRibuan(tx.amount)}" else "- ${formatRibuan(tx.amount)}"
         canvas.drawText(nominalStr, 450f, yPosition, paint)
         
         if (tx.type == "Pemasukan") totalIncome += tx.amount else totalExpense += tx.amount
         yPosition += 20f
     }
 
+    // Total di Bawah
     yPosition += 10f
     canvas.drawLine(40f, yPosition, 555f, yPosition, linePaint)
     yPosition += 25f
     paint.isFakeBoldText = true
-    canvas.drawText("Total Pemasukan: Rp $totalIncome", 350f, yPosition, paint)
+    
+    // FORMAT TOTAL DENGAN TITIK
+    canvas.drawText("Total Pemasukan: Rp ${formatRibuan(totalIncome)}", 350f, yPosition, paint)
     yPosition += 20f
-    canvas.drawText("Total Pengeluaran: Rp $totalExpense", 350f, yPosition, paint)
+    canvas.drawText("Total Pengeluaran: Rp ${formatRibuan(totalExpense)}", 350f, yPosition, paint)
     yPosition += 20f
-    canvas.drawText("Sisa Saldo: Rp ${totalIncome - totalExpense}", 350f, yPosition, paint)
+    canvas.drawText("Sisa Saldo: Rp ${formatRibuan(totalIncome - totalExpense)}", 350f, yPosition, paint)
 
     pdfDocument.finishPage(page)
 
+    // Simpan File ke Downloads
     val fileName = "TRXQ_${monthName}_${month.year}.pdf"
     val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
     try {
