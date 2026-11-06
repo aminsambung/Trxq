@@ -133,7 +133,8 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                 val navItems = listOf(
                     Triple(stringResource(id = R.string.nav_summary), Icons.Default.Home, 0),
                     Triple(stringResource(id = R.string.nav_transactions), Icons.Default.List, 1),
-                    Triple(stringResource(id = R.string.nav_report), Icons.Default.PieChart, 2),
+                    // MENGGUNAKAN IKON STANDAR: List
+                    Triple(stringResource(id = R.string.nav_report), Icons.Default.List, 2),
                     Triple(stringResource(id = R.string.settings), Icons.Default.Settings, 3)
                 )
                 navItems.forEach { (label, icon, index) ->
@@ -158,7 +159,6 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
         Column(Modifier.fillMaxSize().background(BackgroundGray).padding(pad)) {
             when (tab) {
                 0 -> {
-                    // --- LAYAR RINGKASAN ---
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                         contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
@@ -217,7 +217,6 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 1 -> {
-                    // --- LAYAR TRANSAKSI ---
                     Column(Modifier.padding(16.dp)) {
                         MonthPicker(month) { month = it }
                         LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
@@ -229,7 +228,6 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 2 -> {
-                    // --- LAYAR LAPORAN (STATISTICS) INTERAKTIF ---
                     var filterType by remember { mutableStateOf("Bulanan") }
                     var selectedCategory by remember { mutableStateOf<String?>(null) }
                     
@@ -378,7 +376,6 @@ fun FinanceApp(context: Context, vm: FinanceViewModel, onLanguageChange: (String
                     }
                 }
                 3 -> {
-                    // --- LAYAR PENGATURAN ---
                     SettingsScreen(context = context, vm = vm, currentMonth = month, onLanguageChange = onLanguageChange)
                 }
             }
@@ -430,9 +427,9 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, currentMonth: YearMon
         Spacer(modifier = Modifier.height(8.dp))
         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
             Column {
-                // Menu Bahasa
+                // Menu Bahasa (Menggunakan Ikon Settings)
                 Row(modifier = Modifier.fillMaxWidth().clickable { showLanguageDialog = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Language, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFF9C27B0), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Settings, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stringResource(id = R.string.language), fontWeight = FontWeight.Medium)
@@ -443,29 +440,29 @@ fun SettingsScreen(context: Context, vm: FinanceViewModel, currentMonth: YearMon
                 
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
                 
-                // Menu Ekspor PDF
+                // Menu Ekspor PDF (Menggunakan Ikon Share)
                 Row(modifier = Modifier.fillMaxWidth().clickable { 
                     val monthlyTransactions = all.filter { it.date.startsWith(monthKey(currentMonth)) }
                     exportToPdf(context, currentMonth, monthlyTransactions)
                 }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF3F51B5), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFF3F51B5), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Share, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Ekspor Laporan PDF", fontWeight = FontWeight.Medium); Text("Simpan laporan bulan ini ke PDF", fontSize = 12.sp, color = TextGray) }
                 }
 
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
 
-                // Menu Ekspor JSON
+                // Menu Ekspor JSON (Menggunakan Ikon Add)
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupOut.launch("trxq-backup-${LocalDate.now()}.json") }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFF4CAF50), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFF4CAF50), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Ekspor Data (Backup)", fontWeight = FontWeight.Medium); Text("Simpan ke file JSON", fontSize = 12.sp, color = TextGray) }
                 }
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), modifier = Modifier.padding(horizontal = 16.dp))
                 
-                // Menu Impor JSON
+                // Menu Impor JSON (Menggunakan Ikon KeyboardArrowDown)
                 Row(modifier = Modifier.fillMaxWidth().clickable { backupIn.launch(arrayOf("application/json", "text/*")) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).background(Color(0xFFF44336), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CloudDownload, contentDescription = null, tint = Color.White) }
+                    Box(Modifier.size(40.dp).background(Color(0xFFF44336), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.White) }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) { Text("Impor Data (Restore)", fontWeight = FontWeight.Medium); Text("Pulihkan dari file JSON", fontSize = 12.sp, color = TextGray) }
                 }
@@ -718,30 +715,26 @@ private fun categoryIcon(category: String): String = when (category.lowercase())
 // --- FUNGSI CETAK PDF ---
 fun exportToPdf(context: Context, month: YearMonth, transactions: List<Transaction>) {
     val pdfDocument = PdfDocument()
-    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // Ukuran A4
+    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
     val page = pdfDocument.startPage(pageInfo)
     val canvas: Canvas = page.canvas
     val paint = Paint()
     
-    // Judul
     paint.color = AndroidColor.BLACK
     paint.textSize = 18f
     paint.isFakeBoldText = true
     canvas.drawText("Laporan Keuangan TRXQ", 40f, 50f, paint)
     
-    // Periode
     paint.textSize = 12f
     paint.isFakeBoldText = false
     val monthName = month.month.name.lowercase().replaceFirstChar { it.uppercase() }
     canvas.drawText("Periode: $monthName ${month.year}", 40f, 70f, paint)
     
-    // Garis
     val linePaint = Paint()
     linePaint.color = AndroidColor.LTGRAY
     linePaint.strokeWidth = 1f
     canvas.drawLine(40f, 85f, 555f, 85f, linePaint)
 
-    // Header Tabel
     paint.isFakeBoldText = true
     canvas.drawText("Tanggal", 40f, 110f, paint)
     canvas.drawText("Kategori / Catatan", 150f, 110f, paint)
@@ -767,13 +760,8 @@ fun exportToPdf(context: Context, month: YearMonth, transactions: List<Transacti
         
         if (tx.type == "Pemasukan") totalIncome += tx.amount else totalExpense += tx.amount
         yPosition += 20f
-        
-        if (yPosition > 800f) {
-            // Jika halaman penuh (untuk aplikasi sederhana, kita asumsikan data muat 1 halaman)
-        }
     }
 
-    // Total
     yPosition += 10f
     canvas.drawLine(40f, yPosition, 555f, yPosition, linePaint)
     yPosition += 25f
@@ -786,7 +774,6 @@ fun exportToPdf(context: Context, month: YearMonth, transactions: List<Transacti
 
     pdfDocument.finishPage(page)
 
-    // Simpan File ke Downloads
     val fileName = "TRXQ_${monthName}_${month.year}.pdf"
     val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
     try {
