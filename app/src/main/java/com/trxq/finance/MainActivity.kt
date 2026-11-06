@@ -687,7 +687,10 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
         },
         confirmButton = {
             Button(
-                onClick = { amount.toLongOrNull()?.let { save(type, it, category, note, date) } }, 
+                onClick = { 
+    val cleanAmount = amount.replace(".", "").toLongOrNull()
+    cleanAmount?.let { save(type, it, category, note, date) } 
+}, 
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
             ) { Text(stringResource(id = R.string.save), fontSize = 16.sp) }
