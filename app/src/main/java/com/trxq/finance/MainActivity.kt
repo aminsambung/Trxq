@@ -645,13 +645,13 @@ fun TransactionDialog(item: Transaction?, save: (String, Long, String, String, S
                 }
 
                 OutlinedTextField(
-                    value = amount, 
-                    onValueChange = { amount = it.filter(Char::isDigit) }, 
-                    label = { Text(stringResource(id = R.string.amount)) }, 
-                    prefix = { Text("Rp ") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), 
-                    singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
-                )
+                value = amount, 
+                onValueChange = { amount = formatInputRibuan(it) }, // Format otomatis saat diketik
+                label = { Text(stringResource(id = R.string.amount)) }, 
+                prefix = { Text("Rp ") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), 
+                singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
+                   )
                 
                 Text(stringResource(id = R.string.category), fontSize = 12.sp, color = TextGray, fontWeight = FontWeight.Bold)
                 
