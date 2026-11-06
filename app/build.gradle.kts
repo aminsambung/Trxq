@@ -17,18 +17,18 @@ android {
         versionName = "1.0"
     }
 
-    // --- KODE UNTUK MENGECILKAN UKURAN APK ---
     buildTypes {
-        release {
-            isMinifyEnabled = true      // Menghapus kode yang tidak dipakai
-            isShrinkResources = true    // Menghapus resource/gambar yang tidak dipakai
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
+    release {
+        isMinifyEnabled = true
+        isShrinkResources = true
+        // TAMBAHKAN BARIS INI: Agar menggunakan kunci otomatis dari Android
+        signingConfig = signingConfigs.getByName("debug") 
+        proguardFiles(
+            getDefaultProguardFile("proguard-android-optimize.txt"),
+            "proguard-rules.pro"
+        )
     }
-    // -----------------------------------------
+}
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
