@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Spendwise</string>
+    <string name="app_name">Trxq Finance</string>
+    <string name="app_title">Financial Records</string>
     <string name="greeting">Good Afternoon</string>
     <string name="total_balance">Remaining Balance</string>
     <string name="income">Income</string>
@@ -7,7 +8,7 @@
     <string name="comparison">This Month Comparison</string>
     <string name="chart_6_months">6 Months Chart</string>
     <string name="recent_transactions">Recent Transactions</string>
-    
+
     <!-- Bottom Nav -->
     <string name="nav_summary">Summary</string>
     <string name="nav_transactions">Transactions</string>
@@ -24,4 +25,21 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+    
+    <!-- Settings (Untuk Menu Baru) -->
+    <string name="settings">Settings</string>
+    <string name="profiles">PROFILES</string>
+    <string name="active_profile">Active Profile</string>
+    <string name="personal">Personal</string>
+    <string name="office">Office</string>
+    <string name="home">Home</string>
+    <string name="add_new_profile">Add New Profile</string>
+    <string name="general">GENERAL</string>
+    <string name="language">Language</string>
+    <string name="english">English</string>
+    <string name="indonesian">Indonesian</string>
+    <string name="theme">Theme</string>
+    <string name="system_default">System Default</string>
+    <string name="select_profile">Select Profile</string>
+    <string name="active">Active</string>
 </resources>
